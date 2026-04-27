@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		CA6354842F9EFFE700018949 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = CA6354832F9EFFDF00018949 /* README.md */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		CA6354672F9EFF4C00018949 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +31,7 @@
 		CA6354572F9EFF4B00018949 /* SplitMate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SplitMate.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CA6354662F9EFF4C00018949 /* SplitMateTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SplitMateTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CA6354702F9EFF4C00018949 /* SplitMateUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SplitMateUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CA6354832F9EFFDF00018949 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -75,6 +80,7 @@
 		CA63544E2F9EFF4B00018949 = {
 			isa = PBXGroup;
 			children = (
+				CA6354832F9EFFDF00018949 /* README.md */,
 				CA6354592F9EFF4B00018949 /* SplitMate */,
 				CA6354692F9EFF4C00018949 /* SplitMateTests */,
 				CA6354732F9EFF4C00018949 /* SplitMateUITests */,
@@ -212,6 +218,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CA6354842F9EFFE700018949 /* README.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
