@@ -4,6 +4,7 @@ struct GroupSettingsTab: View {
     @ObservedObject var viewModel: GroupViewModel
     let groupId: UUID
     @State private var showingAddMember = false
+    @State private var showingEditName = false
 
     private var group: SplitGroup? {
         viewModel.groups.first { $0.id == groupId }
@@ -32,22 +33,42 @@ struct GroupSettingsTab: View {
         }
         .sheet(isPresented: $showingAddMember) {
             AddMemberView(viewModel: viewModel, groupId: groupId)
+                .presentationDetents([.height(280)])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showingEditName) {
+            if let group {
+                EditGroupNameView(viewModel: viewModel, groupId: groupId, currentName: group.name)
+                    .presentationDetents([.height(280)])
+                    .presentationDragIndicator(.visible)
+            }
         }
     }
 
     private func groupSection(group: SplitGroup) -> some View {
         sectionCard {
             sectionHeader("Group")
-            VStack(alignment: .leading, spacing: 3) {
-                Text(group.name)
-                    .font(.nunito(18, weight: .heavy))
-                    .foregroundColor(.appText)
-                Text("Created on \(Self.dateFormatter.string(from: group.createdAt))")
-                    .font(.nunito(13, weight: .semibold))
-                    .foregroundColor(.appMuted)
+            Button {
+                showingEditName = true
+            } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(group.name)
+                            .font(.nunito(18, weight: .heavy))
+                            .foregroundColor(.appText)
+                        Text("Created on \(Self.dateFormatter.string(from: group.createdAt))")
+                            .font(.nunito(13, weight: .semibold))
+                            .foregroundColor(.appMuted)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.appMuted)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .buttonStyle(.plain)
         }
     }
 
