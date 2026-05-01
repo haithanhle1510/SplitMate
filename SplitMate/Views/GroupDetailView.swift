@@ -3,7 +3,7 @@ import SwiftUI
 struct GroupDetailView: View {
     @ObservedObject var viewModel: GroupViewModel
     let groupId: UUID
-    @State private var showingAddMember = false
+    @State private var selectedTab: Int = 0
 
     private var group: SplitGroup? {
         viewModel.groups.first { $0.id == groupId }
@@ -11,33 +11,40 @@ struct GroupDetailView: View {
 
     var body: some View {
         if let group = group {
-            List {
-                Section(header: Text("Members")) {
-                    if group.members.isEmpty {
-                        Text("No members yet").foregroundColor(.secondary)
-                    } else {
-                        ForEach(group.members) { member in
-                            Text(member.name)
-                        }
+            TabView(selection: $selectedTab) {
+                GroupHomeTab(viewModel: viewModel, groupId: groupId, selectedTab: $selectedTab)
+                    .tabItem {
+                        Label("Home", systemImage: "house.fill")
                     }
-                }
-                Section(header: Text("Expenses")) {
-                    Text("No expenses yet").foregroundColor(.secondary)
-                }
-            }
-            .navigationTitle(group.name)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingAddMember = true }) {
-                        Image(systemName: "person.badge.plus")
+                    .tag(0)
+
+                GroupExpensesTab(viewModel: viewModel, groupId: groupId)
+                    .tabItem {
+                        Label("Expenses", systemImage: "list.bullet.rectangle")
                     }
-                }
+                    .tag(1)
+
+                GroupSettingsTab(viewModel: viewModel, groupId: groupId)
+                    .tabItem {
+                        Label("Settings", systemImage: "gearshape")
+                    }
+                    .tag(2)
             }
-            .sheet(isPresented: $showingAddMember) {
-                AddMemberView(viewModel: viewModel, groupId: groupId)
-            }
+            .tint(.appTerra)
+            .navigationTitle(currentTitle(groupName: group.name))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color.appBg, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
         } else {
             Text("Group not found").foregroundColor(.secondary)
+        }
+    }
+
+    private func currentTitle(groupName: String) -> String {
+        switch selectedTab {
+        case 1: return "Expenses"
+        case 2: return "Settings"
+        default: return groupName
         }
     }
 }

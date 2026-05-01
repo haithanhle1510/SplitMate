@@ -1,0 +1,135 @@
+import SwiftUI
+
+struct GroupSettingsTab: View {
+    @ObservedObject var viewModel: GroupViewModel
+    let groupId: UUID
+    @State private var showingAddMember = false
+
+    private var group: SplitGroup? {
+        viewModel.groups.first { $0.id == groupId }
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        return f
+    }()
+
+    var body: some View {
+        ZStack {
+            Color.appBg.ignoresSafeArea()
+            if let group {
+                ScrollView {
+                    VStack(spacing: 14) {
+                        groupSection(group: group)
+                        membersSection(group: group)
+                        deleteSection
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 14)
+                }
+            }
+        }
+        .sheet(isPresented: $showingAddMember) {
+            AddMemberView(viewModel: viewModel, groupId: groupId)
+        }
+    }
+
+    private func groupSection(group: SplitGroup) -> some View {
+        sectionCard {
+            sectionHeader("Group")
+            VStack(alignment: .leading, spacing: 3) {
+                Text(group.name)
+                    .font(.nunito(18, weight: .heavy))
+                    .foregroundColor(.appText)
+                Text("Created on \(Self.dateFormatter.string(from: group.createdAt))")
+                    .font(.nunito(13, weight: .semibold))
+                    .foregroundColor(.appMuted)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+        }
+    }
+
+    private func membersSection(group: SplitGroup) -> some View {
+        sectionCard {
+            sectionHeader("Members")
+            VStack(spacing: 0) {
+                ForEach(Array(group.members.enumerated()), id: \.element.id) { idx, member in
+                    MemberRow(member: member)
+                    if idx < group.members.count - 1 {
+                        divider
+                    }
+                }
+                if !group.members.isEmpty { divider }
+                addMemberRow
+            }
+        }
+    }
+
+    private var addMemberRow: some View {
+        Button {
+            showingAddMember = true
+        } label: {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [4]))
+                        .foregroundColor(.appBorder)
+                        .frame(width: 36, height: 36)
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.appMuted)
+                }
+                Text("+ Add member")
+                    .font(.nunito(15, weight: .bold))
+                    .foregroundColor(.appTerra)
+                Spacer()
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var deleteSection: some View {
+        sectionCard {
+            Button {
+                // Phase 5/6 will wire delete-group confirm alert.
+            } label: {
+                Text("Delete group")
+                    .font(.nunito(15, weight: .bold))
+                    .foregroundColor(.appWarmGray)
+                    .frame(maxWidth: .infinity)
+                    .padding(14)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func sectionCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 0, content: content)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 16).fill(Color.appWhite)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16).stroke(Color.appBorder, lineWidth: 1)
+            )
+    }
+
+    private func sectionHeader(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.nunito(12, weight: .bold))
+            .tracking(0.6)
+            .foregroundColor(.appMuted)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(divider, alignment: .bottom)
+    }
+
+    private var divider: some View {
+        Rectangle().fill(Color.appBorder).frame(height: 1)
+    }
+}
