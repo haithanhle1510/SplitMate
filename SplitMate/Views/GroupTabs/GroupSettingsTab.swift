@@ -9,6 +9,7 @@ struct GroupSettingsTab: View {
     @State private var showingEditName = false
     @State private var showingDeleteConfirm = false
     @State private var showingRemoveBlocked = false
+    @State private var memberToRemove: Member? = nil
 
     private var group: SplitGroup? {
         viewModel.groups.first { $0.id == groupId }
@@ -61,6 +62,22 @@ struct GroupSettingsTab: View {
         } message: {
             Text("This member has expenses in the group. Remove or settle their expenses first.")
         }
+        .alert(
+            "Remove member?",
+            isPresented: Binding(
+                get: { memberToRemove != nil },
+                set: { if !$0 { memberToRemove = nil } }
+            ),
+            presenting: memberToRemove
+        ) { member in
+            Button("Cancel", role: .cancel) { memberToRemove = nil }
+            Button("Remove", role: .destructive) {
+                attemptRemove(memberId: member.id)
+                memberToRemove = nil
+            }
+        } message: { member in
+            Text("Remove \(member.name) from this group?")
+        }
     }
 
     private func groupSection(group: SplitGroup) -> some View {
@@ -97,7 +114,7 @@ struct GroupSettingsTab: View {
                 ForEach(Array(group.members.enumerated()), id: \.element.id) { idx, member in
                     MemberRow(
                         member: member,
-                        onRemove: { attemptRemove(memberId: member.id) }
+                        onRemove: { memberToRemove = member }
                     )
                     if idx < group.members.count - 1 {
                         divider

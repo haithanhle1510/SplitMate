@@ -17,6 +17,7 @@ struct GroupCardView: View {
                     .foregroundColor(.appText)
             }
             .frame(width: 44, height: 44)
+            .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(group.name)

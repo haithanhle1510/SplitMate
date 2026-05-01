@@ -51,6 +51,7 @@ struct GroupsView: View {
                         }
                         .frame(width: 32, height: 32)
                     }
+                    .accessibilityLabel("Create new group")
                 }
             }
             .toolbarBackground(Color.appBg, for: .navigationBar)

@@ -15,6 +15,7 @@ struct EmptyStateView: View {
                     .frame(width: 96, height: 96)
                 Text(emoji).font(.system(size: 40))
             }
+            .accessibilityHidden(true)
             VStack(spacing: 8) {
                 Text(title)
                     .font(.nunito(20, weight: .heavy))

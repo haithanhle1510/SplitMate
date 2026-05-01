@@ -21,6 +21,7 @@ struct MemberRow: View {
     var body: some View {
         HStack(spacing: 10) {
             AvatarView(name: member.name, size: 36)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(member.name)
                     .font(.nunito(15, weight: .heavy))
@@ -38,8 +39,11 @@ struct MemberRow: View {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 20))
                         .foregroundColor(.appWarmGray)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Remove \(member.name)")
             }
         }
         .padding(.horizontal, 14)

@@ -2,8 +2,8 @@ import SwiftUI
 import CoreText
 
 extension Font {
-    static func nunito(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
-        Font.custom("Nunito", size: size).weight(weight)
+    static func nunito(_ size: CGFloat, weight: Font.Weight = .regular, relativeTo textStyle: Font.TextStyle = .body) -> Font {
+        Font.custom("Nunito", size: size, relativeTo: textStyle).weight(weight)
     }
 }
 
