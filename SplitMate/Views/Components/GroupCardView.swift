@@ -2,7 +2,7 @@ import SwiftUI
 
 struct GroupCardView: View {
     let group: SplitGroup
-    var unsettledAmount: Double = 0
+    var unsettledAmount: Double? = nil
 
     private var groupInitial: String {
         String(group.name.prefix(1)).uppercased()
@@ -31,21 +31,23 @@ struct GroupCardView: View {
             Spacer()
 
             HStack(spacing: 6) {
-                if unsettledAmount > 0 {
-                    Text("\(CurrencyFormatter.format(unsettledAmount)) unsettled")
-                        .font(.nunito(14, weight: .heavy))
-                        .foregroundColor(.appTerra)
-                } else {
-                    HStack(spacing: 4) {
-                        ZStack {
-                            Circle().fill(Color.appSageLt).frame(width: 13, height: 13)
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 7, weight: .bold))
+                if let unsettledAmount {
+                    if unsettledAmount > 0 {
+                        Text("\(CurrencyFormatter.format(unsettledAmount)) unsettled")
+                            .font(.nunito(14, weight: .heavy))
+                            .foregroundColor(.appTerra)
+                    } else {
+                        HStack(spacing: 4) {
+                            ZStack {
+                                Circle().fill(Color.appSageLt).frame(width: 13, height: 13)
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 7, weight: .bold))
+                                    .foregroundColor(.appSageDark)
+                            }
+                            Text("All settled")
+                                .font(.nunito(14, weight: .heavy))
                                 .foregroundColor(.appSageDark)
                         }
-                        Text("All settled")
-                            .font(.nunito(14, weight: .heavy))
-                            .foregroundColor(.appSageDark)
                     }
                 }
                 Image(systemName: "chevron.right")

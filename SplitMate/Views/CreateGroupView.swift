@@ -61,7 +61,7 @@ struct CreateGroupView: View {
             }
         }
         .padding(.horizontal, 20)
-        .padding(.top, 24)
+        .padding(.top, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color.appWhite.ignoresSafeArea())
         .onAppear { nameFocused = true }

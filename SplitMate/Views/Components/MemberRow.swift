@@ -2,11 +2,12 @@ import SwiftUI
 
 struct MemberRow: View {
     let member: Member
-    var balance: Double = 0
+    var balance: Double? = nil
     var onSettleAll: (() -> Void)? = nil
     var onRemove: (() -> Void)? = nil
 
-    private var subLabel: String {
+    private var subLabel: String? {
+        guard let balance else { return nil }
         if balance > 0 {
             return "is owed \(CurrencyFormatter.format(balance))"
         } else if balance < 0 {
@@ -16,7 +17,10 @@ struct MemberRow: View {
         }
     }
 
-    private var isSettled: Bool { balance == 0 }
+    private var isSettled: Bool {
+        guard let balance else { return true }
+        return balance == 0
+    }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -26,9 +30,11 @@ struct MemberRow: View {
                 Text(member.name)
                     .font(.nunito(15, weight: .heavy))
                     .foregroundColor(.appText)
-                Text(subLabel)
-                    .font(.nunito(12, weight: .semibold))
-                    .foregroundColor(isSettled ? .appMuted : .appText)
+                if let subLabel {
+                    Text(subLabel)
+                        .font(.nunito(12, weight: .semibold))
+                        .foregroundColor(isSettled ? .appMuted : .appText)
+                }
             }
             Spacer()
             if !isSettled, let onSettleAll {

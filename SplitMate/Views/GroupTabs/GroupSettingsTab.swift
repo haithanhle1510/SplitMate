@@ -114,7 +114,10 @@ struct GroupSettingsTab: View {
                 ForEach(Array(group.members.enumerated()), id: \.element.id) { idx, member in
                     MemberRow(
                         member: member,
-                        onRemove: { memberToRemove = member }
+                        onRemove: {
+                            Haptics.warning()
+                            memberToRemove = member
+                        }
                     )
                     if idx < group.members.count - 1 {
                         divider
@@ -140,7 +143,7 @@ struct GroupSettingsTab: View {
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.appMuted)
                 }
-                Text("+ Add member")
+                Text("Add member")
                     .font(.nunito(15, weight: .bold))
                     .foregroundColor(.appTerra)
                 Spacer()
@@ -154,6 +157,7 @@ struct GroupSettingsTab: View {
     private var deleteSection: some View {
         sectionCard {
             Button {
+                Haptics.warning()
                 showingDeleteConfirm = true
             } label: {
                 Text("Delete group")
@@ -169,6 +173,7 @@ struct GroupSettingsTab: View {
     private func attemptRemove(memberId: UUID) {
         let result = viewModel.removeMember(fromGroupId: groupId, memberId: memberId)
         if result == .blockedByExpenses {
+            Haptics.error()
             showingRemoveBlocked = true
         }
     }

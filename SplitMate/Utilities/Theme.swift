@@ -11,7 +11,7 @@ extension Color {
     static let appWarmGray    = Color(hex: 0xD0C6BE)
     static let appWarmGrayLt  = Color(hex: 0xEDE9E5)
     static let appText        = Color(hex: 0x3A2820)
-    static let appMuted       = Color(hex: 0x9A8880)
+    static let appMuted       = Color(hex: 0x7E6C64)
     static let appWhite       = Color(hex: 0xFFFDF9)
     static let appBorder      = Color(hex: 0xE8DDD5)
 

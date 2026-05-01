@@ -3,6 +3,7 @@ import SwiftUI
 struct GroupExpensesTab: View {
     @ObservedObject var viewModel: GroupViewModel
     let groupId: UUID
+    @State private var showingComingSoon = false
 
     var body: some View {
         ZStack {
@@ -10,17 +11,15 @@ struct GroupExpensesTab: View {
             EmptyStateView(
                 emoji: "🧾",
                 title: "No expenses yet.",
-                message: "First round on you?",
+                message: "Adding expenses is coming soon.",
                 ctaLabel: "+ Add expense",
-                onCtaTap: {
-                    // Add Expense flow not yet built — placeholder for future work.
-                }
+                onCtaTap: { showingComingSoon = true }
             )
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    // Add Expense flow not yet built — placeholder for future work.
+                    showingComingSoon = true
                 } label: {
                     ZStack {
                         RoundedRectangle(cornerRadius: 9).fill(Color.appTerra)
@@ -32,6 +31,11 @@ struct GroupExpensesTab: View {
                 }
                 .accessibilityLabel("Add expense")
             }
+        }
+        .alert("Coming soon", isPresented: $showingComingSoon) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("The Add Expense flow is still being built. Check back soon.")
         }
     }
 }
