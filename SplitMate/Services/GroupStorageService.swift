@@ -6,7 +6,7 @@ class GroupStorageService {
 
     private init() {}
 
-    func save(groups: [Group]) {
+    func save(groups: [SplitGroup]) {
         let encoder = JSONEncoder()
         do {
             let data = try encoder.encode(groups)
@@ -18,7 +18,7 @@ class GroupStorageService {
         }
     }
 
-    func load() -> [Group] {
+    func load() -> [SplitGroup] {
         guard let url = getFileURL(),
               FileManager.default.fileExists(atPath: url.path) else {
             return []
@@ -26,7 +26,7 @@ class GroupStorageService {
         do {
             let data = try Data(contentsOf: url)
             let decoder = JSONDecoder()
-            let groups = try decoder.decode([Group].self, from: data)
+            let groups = try decoder.decode([SplitGroup].self, from: data)
             return groups
         } catch {
             print("Failed to load groups: \(error)")

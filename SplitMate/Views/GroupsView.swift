@@ -1,10 +1,10 @@
 import SwiftUI
 
-struct DashboardView: View {
+struct GroupsView: View {
     @StateObject private var viewModel = GroupViewModel()
     @State private var showingAddGroup = false
     @State private var newGroupName = ""
-    
+
     var body: some View {
         NavigationView {
             VStack {
@@ -14,7 +14,7 @@ struct DashboardView: View {
                         .padding()
                 } else {
                     List(viewModel.groups) { group in
-                        NavigationLink(destination: Text(group.name)) {
+                        NavigationLink(destination: GroupDetailView(viewModel: viewModel, groupId: group.id)) {
                             VStack(alignment: .leading) {
                                 Text(group.name).font(.headline)
                                 Text("Members: \(group.members.count)").font(.subheadline).foregroundColor(.secondary)
@@ -39,5 +39,5 @@ struct DashboardView: View {
 }
 
 #Preview {
-    DashboardView()
+    GroupsView()
 }
