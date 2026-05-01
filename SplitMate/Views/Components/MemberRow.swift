@@ -4,6 +4,7 @@ struct MemberRow: View {
     let member: Member
     var balance: Double = 0
     var onSettleAll: (() -> Void)? = nil
+    var onRemove: (() -> Void)? = nil
 
     private var subLabel: String {
         if balance > 0 {
@@ -31,6 +32,14 @@ struct MemberRow: View {
             Spacer()
             if !isSettled, let onSettleAll {
                 TerraButton(label: "Settle all", outline: true, small: true, action: onSettleAll)
+            }
+            if let onRemove {
+                Button(action: onRemove) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(.appWarmGray)
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, 14)

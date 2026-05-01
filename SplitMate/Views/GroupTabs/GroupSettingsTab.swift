@@ -3,8 +3,12 @@ import SwiftUI
 struct GroupSettingsTab: View {
     @ObservedObject var viewModel: GroupViewModel
     let groupId: UUID
+    var onGroupDeleted: () -> Void = {}
+
     @State private var showingAddMember = false
     @State private var showingEditName = false
+    @State private var showingDeleteConfirm = false
+    @State private var showingRemoveBlocked = false
 
     private var group: SplitGroup? {
         viewModel.groups.first { $0.id == groupId }
@@ -43,6 +47,20 @@ struct GroupSettingsTab: View {
                     .presentationDragIndicator(.visible)
             }
         }
+        .alert("Delete group?", isPresented: $showingDeleteConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                viewModel.deleteGroup(id: groupId)
+                onGroupDeleted()
+            }
+        } message: {
+            Text("This cannot be undone.")
+        }
+        .alert("Cannot remove member", isPresented: $showingRemoveBlocked) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("This member has expenses in the group. Remove or settle their expenses first.")
+        }
     }
 
     private func groupSection(group: SplitGroup) -> some View {
@@ -77,7 +95,10 @@ struct GroupSettingsTab: View {
             sectionHeader("Members")
             VStack(spacing: 0) {
                 ForEach(Array(group.members.enumerated()), id: \.element.id) { idx, member in
-                    MemberRow(member: member)
+                    MemberRow(
+                        member: member,
+                        onRemove: { attemptRemove(memberId: member.id) }
+                    )
                     if idx < group.members.count - 1 {
                         divider
                     }
@@ -116,7 +137,7 @@ struct GroupSettingsTab: View {
     private var deleteSection: some View {
         sectionCard {
             Button {
-                // Phase 5/6 will wire delete-group confirm alert.
+                showingDeleteConfirm = true
             } label: {
                 Text("Delete group")
                     .font(.nunito(15, weight: .bold))
@@ -125,6 +146,13 @@ struct GroupSettingsTab: View {
                     .padding(14)
             }
             .buttonStyle(.plain)
+        }
+    }
+
+    private func attemptRemove(memberId: UUID) {
+        let result = viewModel.removeMember(fromGroupId: groupId, memberId: memberId)
+        if result == .blockedByExpenses {
+            showingRemoveBlocked = true
         }
     }
 

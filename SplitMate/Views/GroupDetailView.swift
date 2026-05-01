@@ -3,6 +3,7 @@ import SwiftUI
 struct GroupDetailView: View {
     @ObservedObject var viewModel: GroupViewModel
     let groupId: UUID
+    @Environment(\.dismiss) private var dismiss
     @State private var selectedTab: Int = 0
 
     private var group: SplitGroup? {
@@ -24,11 +25,15 @@ struct GroupDetailView: View {
                     }
                     .tag(1)
 
-                GroupSettingsTab(viewModel: viewModel, groupId: groupId)
-                    .tabItem {
-                        Label("Settings", systemImage: "gearshape")
-                    }
-                    .tag(2)
+                GroupSettingsTab(
+                    viewModel: viewModel,
+                    groupId: groupId,
+                    onGroupDeleted: { dismiss() }
+                )
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape")
+                }
+                .tag(2)
             }
             .tint(.appTerra)
             .navigationTitle(currentTitle(groupName: group.name))
