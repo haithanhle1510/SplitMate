@@ -1,6 +1,6 @@
 import Foundation
 
-struct Group: Identifiable, Codable {
+struct SplitGroup: Identifiable, Codable {
     let id: UUID
     var name: String
     var members: [Member]

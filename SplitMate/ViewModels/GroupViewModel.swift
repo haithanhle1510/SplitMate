@@ -1,20 +1,57 @@
 import Foundation
 import Combine
 
+enum RemoveMemberResult {
+    case removed
+    case blockedByExpenses
+    case notFound
+}
+
 class GroupViewModel: ObservableObject {
-    // The groups managed by this view model
-    @Published var groups: [Group] = []
-    
-    // For demo: basic initializer with test data
-    init() {
-        // For now, create an empty list; can load from storage later
-        self.groups = []
+    @Published var groups: [SplitGroup] = [] {
+        didSet { GroupStorageService.shared.save(groups: groups) }
     }
-    
-    // Add a new group
+
+    init() {
+        self.groups = GroupStorageService.shared.load()
+    }
+
     func addGroup(name: String) {
-        let group = Group(id: UUID(), name: name, members: [], expenses: [], createdAt: Date())
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        let group = SplitGroup(id: UUID(), name: trimmed, members: [], expenses: [], createdAt: Date())
         groups.append(group)
-        // Persist change in future
+    }
+
+    func renameGroup(id: UUID, newName: String) {
+        let trimmed = newName.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty,
+              let idx = groups.firstIndex(where: { $0.id == id }) else { return }
+        groups[idx].name = trimmed
+    }
+
+    func deleteGroup(id: UUID) {
+        groups.removeAll { $0.id == id }
+    }
+
+    func addMember(toGroupId: UUID, name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty,
+              let idx = groups.firstIndex(where: { $0.id == toGroupId }) else { return }
+        groups[idx].members.append(Member(id: UUID(), name: trimmed))
+    }
+
+    func removeMember(fromGroupId: UUID, memberId: UUID) -> RemoveMemberResult {
+        guard let idx = groups.firstIndex(where: { $0.id == fromGroupId }) else {
+            return .notFound
+        }
+        let isReferencedInExpenses = groups[idx].expenses.contains { exp in
+            exp.paidBy == memberId || exp.participantIds.contains(memberId)
+        }
+        if isReferencedInExpenses {
+            return .blockedByExpenses
+        }
+        groups[idx].members.removeAll { $0.id == memberId }
+        return .removed
     }
 }

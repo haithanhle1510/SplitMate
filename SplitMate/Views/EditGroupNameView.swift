@@ -1,20 +1,27 @@
 import SwiftUI
 
-struct CreateGroupView: View {
+struct EditGroupNameView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: GroupViewModel
-    @State private var groupName: String = ""
+    let groupId: UUID
+    @State private var groupName: String
     @FocusState private var nameFocused: Bool
+
+    init(viewModel: GroupViewModel, groupId: UUID, currentName: String) {
+        self.viewModel = viewModel
+        self.groupId = groupId
+        _groupName = State(initialValue: currentName)
+    }
 
     private var trimmed: String {
         groupName.trimmingCharacters(in: .whitespaces)
     }
 
-    private var canCreate: Bool { !trimmed.isEmpty }
+    private var canSave: Bool { !trimmed.isEmpty }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("New Group")
+            Text("Edit Group Name")
                 .font(.nunito(20, weight: .heavy))
                 .foregroundColor(.appText)
 
@@ -23,7 +30,7 @@ struct CreateGroupView: View {
                     .font(.nunito(13, weight: .bold))
                     .foregroundColor(.appMuted)
                     .tracking(0.5)
-                TextField("e.g. Bali Trip", text: $groupName)
+                TextField("Group name", text: $groupName)
                     .font(.nunito(16, weight: .bold))
                     .foregroundColor(.appText)
                     .focused($nameFocused)
@@ -52,12 +59,12 @@ struct CreateGroupView: View {
                 }
                 .buttonStyle(.plain)
 
-                TerraButton(label: "Create", fullWidth: true) {
-                    viewModel.addGroup(name: trimmed)
+                TerraButton(label: "Save", fullWidth: true) {
+                    viewModel.renameGroup(id: groupId, newName: trimmed)
                     dismiss()
                 }
-                .opacity(canCreate ? 1 : 0.5)
-                .disabled(!canCreate)
+                .opacity(canSave ? 1 : 0.5)
+                .disabled(!canSave)
             }
         }
         .padding(.horizontal, 20)
@@ -66,8 +73,4 @@ struct CreateGroupView: View {
         .background(Color.appWhite.ignoresSafeArea())
         .onAppear { nameFocused = true }
     }
-}
-
-#Preview {
-    CreateGroupView(viewModel: GroupViewModel())
 }

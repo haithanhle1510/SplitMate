@@ -1,29 +1,30 @@
 import SwiftUI
 
-struct CreateGroupView: View {
+struct AddMemberView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: GroupViewModel
-    @State private var groupName: String = ""
+    let groupId: UUID
+    @State private var memberName: String = ""
     @FocusState private var nameFocused: Bool
 
     private var trimmed: String {
-        groupName.trimmingCharacters(in: .whitespaces)
+        memberName.trimmingCharacters(in: .whitespaces)
     }
 
-    private var canCreate: Bool { !trimmed.isEmpty }
+    private var canAdd: Bool { !trimmed.isEmpty }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("New Group")
+            Text("Add Member")
                 .font(.nunito(20, weight: .heavy))
                 .foregroundColor(.appText)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("GROUP NAME")
+                Text("NAME")
                     .font(.nunito(13, weight: .bold))
                     .foregroundColor(.appMuted)
                     .tracking(0.5)
-                TextField("e.g. Bali Trip", text: $groupName)
+                TextField("e.g. Alex", text: $memberName)
                     .font(.nunito(16, weight: .bold))
                     .foregroundColor(.appText)
                     .focused($nameFocused)
@@ -52,12 +53,12 @@ struct CreateGroupView: View {
                 }
                 .buttonStyle(.plain)
 
-                TerraButton(label: "Create", fullWidth: true) {
-                    viewModel.addGroup(name: trimmed)
+                TerraButton(label: "Add", fullWidth: true) {
+                    viewModel.addMember(toGroupId: groupId, name: trimmed)
                     dismiss()
                 }
-                .opacity(canCreate ? 1 : 0.5)
-                .disabled(!canCreate)
+                .opacity(canAdd ? 1 : 0.5)
+                .disabled(!canAdd)
             }
         }
         .padding(.horizontal, 20)
@@ -66,8 +67,4 @@ struct CreateGroupView: View {
         .background(Color.appWhite.ignoresSafeArea())
         .onAppear { nameFocused = true }
     }
-}
-
-#Preview {
-    CreateGroupView(viewModel: GroupViewModel())
 }
