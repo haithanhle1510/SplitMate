@@ -327,8 +327,6 @@ struct AddExpenseView: View {
         .opacity(group?.members.isEmpty == false ? 1 : 0)
     }
 
-    //Helpers
-
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
             .font(.nunito(11, weight: .heavy))
@@ -351,20 +349,4 @@ struct AddExpenseView: View {
         Haptics.success()
         dismiss()
     }
-}
-
-
-//Preview
-
-#Preview("Add Expense form") {
-    let vm = GroupViewModel()
-    let alex   = Member(id: UUID(), name: "Alex")
-    let mia    = Member(id: UUID(), name: "Mia")
-    let sam    = Member(id: UUID(), name: "Sam")
-    let jordan = Member(id: UUID(), name: "Jordan")
-    let gid    = UUID()
-    vm.groups  = [SplitGroup(id: gid, name: "Weekend Trip",
-                             members: [alex,mia,sam,jordan],
-                             expenses: [], createdAt: Date())]
-    return AddExpenseView(viewModel: vm, groupId: gid)
 }
