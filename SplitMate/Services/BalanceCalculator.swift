@@ -12,16 +12,7 @@ class BalanceCalculator {
         return []
     }
     func calculateBalances() -> [String: Double] {
-        let expenses = getAllExpenses()
-        var balances: [String: Double] = [:]
-
-        for expense in expenses {
-            let amountPerPerson = expense.amount / Double(expense.participants.count)
-            for participant in expense.participants {
-                balances[participant, default: 0.0] += amountPerPerson
-            }
-        }
-        return balances
+        return 0
     }
 }
 
