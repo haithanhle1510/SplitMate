@@ -54,4 +54,48 @@ class GroupViewModel: ObservableObject {
         groups[idx].members.removeAll { $0.id == memberId }
         return .removed
     }
+
+    //Expenses
+    func addExpense(
+        toGroupId: UUID,
+        title: String,
+        amount: Double,
+        paidBy: UUID,
+        participantIds: [UUID],
+        category: ExpenseCategory,
+        date: Date,
+        note: String?
+    ) {
+        guard let idx = groups.firstIndex(where: { $0.id == toGroupId }) else { return }
+        let expense = Expense(
+            id: UUID(),
+            title: title,
+            amount: amount,
+            paidBy: paidBy,
+            participantIds: participantIds,
+            category: category,
+            date: date,
+            note: note?.isEmpty == false ? note : nil,
+            settledMemberIds: [paidBy]
+        )
+        // Insert at front so the list always shows newest expense first without sorting.
+        groups[idx].expenses.insert(expense, at: 0)
+    }
+
+    func deleteExpense(groupId: UUID, expenseId: UUID) {
+        guard let idx = groups.firstIndex(where: { $0.id == groupId }) else { return }
+        groups[idx].expenses.removeAll { $0.id == expenseId }
+    }
+
+    func toggleSettlement(groupId: UUID, expenseId: UUID, memberId: UUID) {
+        guard let gIdx = groups.firstIndex(where: { $0.id == groupId }),
+              let eIdx = groups[gIdx].expenses.firstIndex(where: { $0.id == expenseId }) else { return }
+        let expense = groups[gIdx].expenses[eIdx]
+        guard memberId != expense.paidBy else { return }
+        if expense.settledMemberIds.contains(memberId) {
+            groups[gIdx].expenses[eIdx].settledMemberIds.removeAll { $0 == memberId }
+        } else {
+            groups[gIdx].expenses[eIdx].settledMemberIds.append(memberId)
+        }
+    }
 }
