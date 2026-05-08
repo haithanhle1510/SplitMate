@@ -98,4 +98,35 @@ class GroupViewModel: ObservableObject {
             groups[gIdx].expenses[eIdx].settledMemberIds.append(memberId)
         }
     }
+
+    // MARK: - Debt Calculations
+    
+    /// Get direct debts (original debts from expenses, no simplification)
+    func groupDirectDebts(groupId: UUID) -> [Debt] {
+        guard let group = groups.first(where: { $0.id == groupId }) else { return [] }
+        return BalanceCalculatorService.calculateDirectDebts(group)
+    }
+    
+    /// Get simplified debts (using greedy algorithm - RECOMMENDED)
+    func groupSimplifiedDebts(groupId: UUID) -> [Debt] {
+        guard let group = groups.first(where: { $0.id == groupId }) else { return [] }
+        return BalanceCalculatorService.calculateSimplifiedDebts(group)
+    }
+    
+    /// Get all debts in a group (who owes who) - backward compatible
+    func groupDebts(groupId: UUID) -> [Debt] {
+        return groupSimplifiedDebts(groupId: groupId)
+    }
+    
+    /// Get expenses for a specific debt
+    func getExpensesForDebt(_ debt: Debt, groupId: UUID) -> [Expense] {
+        guard let group = groups.first(where: { $0.id == groupId }) else { return [] }
+        return BalanceCalculatorService.getExpensesForDebt(debt, group: group)
+    }
+    
+    /// Get member balances for a group
+    func memberBalances(groupId: UUID) -> [MemberBalance] {
+        guard let group = groups.first(where: { $0.id == groupId }) else { return [] }
+        return BalanceCalculatorService.calculateMemberBalances(group)
+    }
 }

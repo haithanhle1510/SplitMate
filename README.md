@@ -188,7 +188,7 @@ SplitMate/
 ├── ViewModels/
 │   └── GroupViewModel.swift
 ├── Services/
-│   ├── BalanceCalculator.swift
+│   ├── BalanceCalculatorService.swift
 │   └── GroupStorageService.swift
 ├── Views/
 │   ├── DashboardView.swift

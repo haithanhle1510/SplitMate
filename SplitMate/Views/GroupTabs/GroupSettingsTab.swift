@@ -108,18 +108,55 @@ struct GroupSettingsTab: View {
     }
 
     private func membersSection(group: SplitGroup) -> some View {
-        sectionCard {
+        let balances = viewModel.memberBalances(groupId: groupId)
+        
+        return sectionCard {
             sectionHeader("Members")
             VStack(spacing: 0) {
-                ForEach(Array(group.members.enumerated()), id: \.element.id) { idx, member in
-                    MemberRow(
-                        member: member,
-                        onRemove: {
-                            Haptics.warning()
-                            memberToRemove = member
+                ForEach(Array(balances.enumerated()), id: \.element.id) { idx, balance in
+                    HStack(spacing: 12) {
+                        AvatarView(name: balance.member.name, size: 36)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(balance.member.name)
+                                .font(.nunito(15, weight: .bold))
+                                .foregroundColor(.appText)
+                            
+                            // Balance status
+                            if balance.balance > 0.01 {
+                                Text(balance.member.name + " is owed " + String(format: "$%.2f", balance.balance))
+                                    .font(.nunito(12, weight: .semibold))
+                                    .foregroundColor(.appSage)
+                            } else if balance.balance < -0.01 {
+                                Text(balance.member.name + " owes " + String(format: "$%.2f", abs(balance.balance)))
+                                    .font(.nunito(12, weight: .semibold))
+                                    .foregroundColor(.appMuted)
+                            } else {
+                                Text("Settled")
+                                    .font(.nunito(12, weight: .semibold))
+                                    .foregroundColor(.appTerra)
+                            }
                         }
-                    )
-                    if idx < group.members.count - 1 {
+                        
+                        Spacer()
+                        
+                        // Remove button (only show for members with no references in expenses)
+                        if !group.expenses.contains(where: { $0.paidBy == balance.member.id || $0.participantIds.contains(balance.member.id) }) {
+                            Button {
+                                Haptics.warning()
+                                memberToRemove = balance.member
+                            } label: {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.appMuted)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    
+                    if idx < balances.count - 1 {
                         divider
                     }
                 }
