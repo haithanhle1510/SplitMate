@@ -92,9 +92,16 @@ struct SettleConfirmationSheet: View {
         .padding(.horizontal, 24)
         .padding(.top, 28)
         .padding(.bottom, 20)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(Color.appWhite.ignoresSafeArea())
-        .presentationDragIndicator(.visible)
+        .frame(maxWidth: .infinity)
+        .background(Color.appWhite)
+        .cornerRadius(20)
+        .overlay(
+            Capsule()
+                .fill(Color.appWarmGray)
+                .frame(width: 36, height: 4)
+                .padding(.top, 10),
+            alignment: .top
+        )
     }
 }
 
