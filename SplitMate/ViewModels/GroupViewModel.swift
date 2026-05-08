@@ -87,14 +87,14 @@ class GroupViewModel: ObservableObject {
         groups[idx].expenses.removeAll { $0.id == expenseId }
     }
 
-    func settleAll(groupId: UUID, memberId: UUID) {
+    func settleBetween(groupId: UUID, debtorId: UUID, creditorId: UUID) {
         guard let gIdx = groups.firstIndex(where: { $0.id == groupId }) else { return }
         for eIdx in groups[gIdx].expenses.indices {
             let expense = groups[gIdx].expenses[eIdx]
-            guard expense.participantIds.contains(memberId),
-                  expense.paidBy != memberId,
-                  !expense.settledMemberIds.contains(memberId) else { continue }
-            groups[gIdx].expenses[eIdx].settledMemberIds.append(memberId)
+            guard expense.paidBy == creditorId,
+                  expense.participantIds.contains(debtorId),
+                  !expense.settledMemberIds.contains(debtorId) else { continue }
+            groups[gIdx].expenses[eIdx].settledMemberIds.append(debtorId)
         }
     }
 
