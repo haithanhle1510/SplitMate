@@ -78,7 +78,8 @@ struct BalanceSummaryView: View {
     }
 
     var body: some View {
-        ScrollView {
+        ZStack(alignment: .bottom) {
+            ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 if debtRelationships.isEmpty {
                     VStack(spacing: 8) {
@@ -107,21 +108,27 @@ struct BalanceSummaryView: View {
             }
             .padding(.bottom, 16)
         }
-        .sheet(item: $settleTarget) { rel in
-            SettleConfirmationSheet(
-                debtorName: rel.debtorName,
-                creditorName: rel.creditorName,
-                amount: rel.totalAmount,
-                expenseCount: rel.expenseDetails.count,
-                onConfirm: {
-                    viewModel.settleBetween(groupId: groupId, debtorId: rel.debtorId, creditorId: rel.creditorId)
-                    expandedKeys.remove(rel.id)
-                    Haptics.selection()
-                }
-            )
-            .presentationDetents([.height(380)])
-            .presentationDragIndicator(.visible)
+
+            if let rel = settleTarget {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture { withAnimation { settleTarget = nil } }
+
+                SettleConfirmationSheet(
+                    debtorName: rel.debtorName,
+                    creditorName: rel.creditorName,
+                    amount: rel.totalAmount,
+                    expenseCount: rel.expenseDetails.count,
+                    onConfirm: {
+                        viewModel.settleBetween(groupId: groupId, debtorId: rel.debtorId, creditorId: rel.creditorId)
+                        Haptics.selection()
+                        withAnimation { settleTarget = nil }
+                    }
+                )
+                .transition(.move(edge: .bottom))
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: settleTarget?.id)
     }
 
     // MARK: - Debt Card
