@@ -4,7 +4,6 @@ struct GroupHomeTab: View {
     @ObservedObject var viewModel: GroupViewModel
     let groupId: UUID
     @Binding var selectedTab: Int
-    @State private var showingAddMember = false
 
     private var group: SplitGroup? {
         viewModel.groups.first { $0.id == groupId }
@@ -19,9 +18,9 @@ struct GroupHomeTab: View {
                     EmptyStateView(
                         emoji: "👥",
                         title: "Add some friends first.",
-                        message: "Add members to start splitting expenses.",
-                        ctaLabel: "Add Member",
-                        onCtaTap: { showingAddMember = true }
+                        message: "Head to Settings to invite people to this group.",
+                        ctaLabel: "Go to Settings",
+                        onCtaTap: { selectedTab = 2 }
                     )
                 } else if group.expenses.isEmpty {
                     VStack(spacing: 0) {
@@ -37,15 +36,10 @@ struct GroupHomeTab: View {
                 } else {
                     VStack(spacing: 0) {
                         memberAvatarsRow(group: group)
-                        summaryPlaceholder
+                        BalanceSummaryView(viewModel: viewModel, groupId: groupId)
                     }
                 }
             }
-        }
-        .sheet(isPresented: $showingAddMember) {
-            AddMemberView(viewModel: viewModel, groupId: groupId)
-                .presentationDetents([.height(280)])
-                .presentationDragIndicator(.visible)
         }
     }
 
@@ -67,29 +61,5 @@ struct GroupHomeTab: View {
         }
         .background(Color.appBg)
         .overlay(Rectangle().fill(Color.appBorder).frame(height: 1), alignment: .bottom)
-    }
-
-    private var summaryPlaceholder: some View {
-        VStack(spacing: 12) {
-            Spacer().frame(height: 12)
-            VStack(spacing: 8) {
-                Text("Balance summary")
-                    .font(.nunito(15, weight: .heavy))
-                    .foregroundColor(.appText)
-                Text("Coming soon")
-                    .font(.nunito(13, weight: .semibold))
-                    .foregroundColor(.appMuted)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(24)
-            .background(
-                RoundedRectangle(cornerRadius: 16).fill(Color.appWhite)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16).stroke(Color.appBorder, lineWidth: 1)
-            )
-            .padding(.horizontal, 14)
-            Spacer()
-        }
     }
 }
