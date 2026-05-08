@@ -87,6 +87,17 @@ class GroupViewModel: ObservableObject {
         groups[idx].expenses.removeAll { $0.id == expenseId }
     }
 
+    func settleAll(groupId: UUID, memberId: UUID) {
+        guard let gIdx = groups.firstIndex(where: { $0.id == groupId }) else { return }
+        for eIdx in groups[gIdx].expenses.indices {
+            let expense = groups[gIdx].expenses[eIdx]
+            guard expense.participantIds.contains(memberId),
+                  expense.paidBy != memberId,
+                  !expense.settledMemberIds.contains(memberId) else { continue }
+            groups[gIdx].expenses[eIdx].settledMemberIds.append(memberId)
+        }
+    }
+
     func toggleSettlement(groupId: UUID, expenseId: UUID, memberId: UUID) {
         guard let gIdx = groups.firstIndex(where: { $0.id == groupId }),
               let eIdx = groups[gIdx].expenses.firstIndex(where: { $0.id == expenseId }) else { return }
