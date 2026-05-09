@@ -80,15 +80,14 @@ struct GroupHomeTab: View {
     }
 
     private func whoOwesWhoSection(directDebts: [Debt], group: SplitGroup) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let personSummaries = viewModel.personDebtSummaries(groupId: group.id)
+        
+        return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Who owes who")
                     .font(.nunito(15, weight: .heavy))
                     .foregroundColor(.appText)
                 Spacer()
-                Text("\(directDebts.count) transactions")
-                    .font(.nunito(11, weight: .semibold))
-                    .foregroundColor(.appMuted)
             }
 
             if directDebts.isEmpty {
@@ -103,31 +102,68 @@ struct GroupHomeTab: View {
                 .cornerRadius(12)
             } else {
                 VStack(spacing: 0) {
-                    ForEach(Array(directDebts.enumerated()), id: \.element.id) { idx, debt in
+                    ForEach(Array(personSummaries.enumerated()), id: \.element.person.id) { personIdx, summary in
+                        // Level 1: Person aggregate (total owed)
                         DisclosureGroup {
-                            if !debt.expenseIds.isEmpty {
-                                let expenses = viewModel.getExpensesForDebt(debt, groupId: group.id)
-                                VStack(spacing: 0) {
-                                    ForEach(expenses) { expense in
-                                        ExpenseMiniRow(expense: expense)
+                            VStack(spacing: 0) {
+                                ForEach(Array(summary.allRelationships.enumerated()), id: \.element.debt.id) { relIdx, relationship in
+                                    let debt = relationship.debt
+                                    let isOutgoing = relationship.isOutgoing
+                                    
+                                    // Level 2: Individual relationship (owes or gets paid)
+                                    DisclosureGroup {
+                                        VStack(spacing: 0) {
+                                            if !debt.expenseIds.isEmpty {
+                                                let expenses = viewModel.getExpensesForDebt(debt, groupId: group.id)
+                                                ForEach(expenses) { expense in
+                                                    // Level 3: Individual transactions
+                                                    let paidByMember = group.members.first { $0.id == expense.paidBy }
+                                                    ExpenseMiniRow(expense: expense, paidByName: paidByMember?.name)
+                                                }
+                                            }
+                                        }
+                                    } label: {
+                                        HStack {
+                                            if isOutgoing {
+                                                Text("\(summary.person.name) owes \(debt.creditor.name)")
+                                                    .font(.nunito(13, weight: .bold))
+                                                    .foregroundColor(.appText)
+                                            } else {
+                                                Text("\(debt.debtor.name) owes \(summary.person.name)")
+                                                    .font(.nunito(13, weight: .bold))
+                                                    .foregroundColor(.appMuted)
+                                            }
+                                            Spacer()
+                                            Text(String(format: "$%.2f", debt.amount))
+                                                .font(.nunito(13, weight: .bold))
+                                                .foregroundColor(isOutgoing ? .appTerra : .appSage)
+                                        }
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 10)
+
+                                    if relIdx < summary.allRelationships.count - 1 {
+                                        Divider()
+                                            .background(Color.appBorder)
+                                            .padding(.horizontal, 16)
                                     }
                                 }
                             }
                         } label: {
                             HStack {
-                                Text("\(debt.debtor.name) owes \(debt.creditor.name)")
+                                Text(summary.displayText)
                                     .font(.nunito(14, weight: .bold))
                                     .foregroundColor(.appText)
                                 Spacer()
-                                Text(String(format: "$%.2f", debt.amount))
+                                Text(String(format: "$%.2f", summary.displayAmount))
                                     .font(.nunito(14, weight: .bold))
-                                    .foregroundColor(.appText)
+                                    .foregroundColor(summary.displayColor)
                             }
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
 
-                        if idx < directDebts.count - 1 {
+                        if personIdx < personSummaries.count - 1 {
                             Divider()
                                 .background(Color.appBorder)
                                 .padding(.horizontal, 12)

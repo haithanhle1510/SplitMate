@@ -1,5 +1,57 @@
 import Foundation
 import Combine
+import SwiftUI
+
+/// Helper struct for bidirectional debt relationships of a person
+struct PersonDebtSummary {
+    let person: Member
+    let outgoingDebts: [Debt]  // Debts this person owes to others
+    let incomingDebts: [Debt]  // Debts others owe to this person
+    
+    var totalOwed: Double {
+        outgoingDebts.reduce(0) { $0 + $1.amount }
+    }
+    
+    var totalOwedToThem: Double {
+        incomingDebts.reduce(0) { $0 + $1.amount }
+    }
+    
+    var netBalance: Double {
+        totalOwed - totalOwedToThem
+    }
+    
+    var displayText: String {
+        if netBalance > 0 {
+            return "\(person.name) owes"
+        } else {
+            return "\(person.name) is owed"
+        }
+    }
+    
+    var displayAmount: Double {
+        abs(netBalance)
+    }
+    
+    var displayColor: Color {
+        if netBalance > 0 {
+            return .appTerra  // Terra/Teal for owes
+        } else {
+            return .appSage   // Green/Sage for is owed
+        }
+    }
+    
+    var allRelationships: [(debt: Debt, isOutgoing: Bool)] {
+        let outgoing = outgoingDebts.map { (debt: $0, isOutgoing: true) }
+        let incoming = incomingDebts.map { (debt: $0, isOutgoing: false) }
+        return (outgoing + incoming).sorted { a, b in
+            // Sort outgoing first, then by amount descending
+            if a.isOutgoing != b.isOutgoing {
+                return a.isOutgoing
+            }
+            return a.debt.amount > b.debt.amount
+        }
+    }
+}
 
 enum RemoveMemberResult {
     case removed
@@ -129,4 +181,20 @@ class GroupViewModel: ObservableObject {
         guard let group = groups.first(where: { $0.id == groupId }) else { return [] }
         return BalanceCalculatorService.calculateMemberBalances(group)
     }
+    
+    /// Get person debt summaries (incoming + outgoing debts per person)
+    func personDebtSummaries(groupId: UUID) -> [PersonDebtSummary] {
+        let debts = groupDirectDebts(groupId: groupId)
+        let allMembers = groups.first(where: { $0.id == groupId })?.members ?? []
+        
+        return allMembers
+            .map { member in
+                let outgoing = debts.filter { $0.debtor.id == member.id }
+                let incoming = debts.filter { $0.creditor.id == member.id }
+                return PersonDebtSummary(person: member, outgoingDebts: outgoing, incomingDebts: incoming)
+            }
+            .filter { !$0.outgoingDebts.isEmpty || !$0.incomingDebts.isEmpty }  // Only show members with debts
+            .sorted { a, b in abs(a.netBalance) > abs(b.netBalance) }  // Sort by net balance magnitude (highest first)
+    }
 }
+

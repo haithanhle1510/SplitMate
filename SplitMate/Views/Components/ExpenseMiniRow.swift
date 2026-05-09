@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ExpenseMiniRow: View {
     let expense: Expense
+    let paidByName: String?
     
     var body: some View {
         HStack(spacing: 10) {
@@ -16,9 +17,16 @@ struct ExpenseMiniRow: View {
                 Text(expense.title)
                     .font(.nunito(13, weight: .bold))
                     .foregroundColor(.appText)
-                Text(expense.date.shortFormatted)
-                    .font(.nunito(11, weight: .semibold))
-                    .foregroundColor(.appMuted)
+                HStack(spacing: 4) {
+                    Text(expense.date.shortFormatted)
+                        .font(.nunito(10, weight: .semibold))
+                        .foregroundColor(.appMuted)
+                    if let paidByName {
+                        Text("• Paid by \(paidByName)")
+                            .font(.nunito(10, weight: .semibold))
+                            .foregroundColor(.appMuted)
+                    }
+                }
             }
             Spacer()
             Text(String(format: "$%.2f", expense.perPersonShare))
@@ -42,5 +50,5 @@ struct ExpenseMiniRow: View {
         note: nil,
         settledMemberIds: []
     )
-    return ExpenseMiniRow(expense: sample)
+    return ExpenseMiniRow(expense: sample, paidByName: "Alex")
 }
