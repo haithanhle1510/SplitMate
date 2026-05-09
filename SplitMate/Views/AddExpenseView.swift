@@ -30,7 +30,7 @@ struct AddExpenseView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
+            ZStack {
                 Color.appBg.ignoresSafeArea()
 
                 if group?.members.isEmpty != false {
@@ -47,14 +47,16 @@ struct AddExpenseView: View {
                             categorySection
                             dateSection
                             noteSection
-                            Color.clear.frame(height: 80)
                         }
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
+                        .padding(.bottom, 12)
+
+                        splitSummaryBar
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 20)
                     }
                 }
-
-                splitSummaryBar
             }
             .navigationTitle("New Expense")
             .navigationBarTitleDisplayMode(.inline)
@@ -306,25 +308,23 @@ struct AddExpenseView: View {
             ? String(format: "$%.2f each · across %d %@", perPersonShare, count, count == 1 ? "person" : "people")
             : "Select participants"
 
-        return HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Split equally")
-                    .font(.nunito(13, weight: .heavy))
-                    .foregroundColor(.appWhite)
-                Text(shareText)
-                    .font(.nunito(12, weight: .semibold))
-                    .foregroundColor(.appWhite.opacity(0.85))
-            }
-            Spacer()
-            Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .bold))
-                .foregroundColor(.appWhite.opacity(0.7))
+        return VStack(alignment: .leading, spacing: 2) {
+            Text("Split equally")
+                .font(.nunito(13, weight: .heavy))
+                .foregroundColor(.appText)
+            Text(shareText)
+                .font(.nunito(12, weight: .semibold))
+                .foregroundColor(.appText.opacity(0.85))
         }
-        .padding(.horizontal, 20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
         .padding(.vertical, 16)
-        .background(Color.appTerra)
-        .ignoresSafeArea(edges: .bottom)
-        .opacity(group?.members.isEmpty == false ? 1 : 0)
+        .background(Color.appWhite)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.appBorder, lineWidth: 1.5)
+        )
+        .cornerRadius(12)
     }
 
     private func sectionLabel(_ text: String) -> some View {
