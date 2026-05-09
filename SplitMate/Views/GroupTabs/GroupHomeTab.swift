@@ -4,7 +4,6 @@ struct GroupHomeTab: View {
     @ObservedObject var viewModel: GroupViewModel
     let groupId: UUID
     @Binding var selectedTab: Int
-    @State private var showingAddMember = false
 
     private var group: SplitGroup? {
         viewModel.groups.first { $0.id == groupId }
@@ -19,9 +18,9 @@ struct GroupHomeTab: View {
                     EmptyStateView(
                         emoji: "👥",
                         title: "Add some friends first.",
-                        message: "Add members to start splitting expenses.",
-                        ctaLabel: "Add Member",
-                        onCtaTap: { showingAddMember = true }
+                        message: "Head to Settings to invite people to this group.",
+                        ctaLabel: "Go to Settings",
+                        onCtaTap: { selectedTab = 2 }
                     )
                 } else if group.expenses.isEmpty {
                     VStack(spacing: 0) {
@@ -37,15 +36,10 @@ struct GroupHomeTab: View {
                 } else {
                     VStack(spacing: 0) {
                         memberAvatarsRow(group: group)
-                        summaryPlaceholder
+                        BalanceSummaryView(viewModel: viewModel, groupId: groupId)
                     }
                 }
             }
-        }
-        .sheet(isPresented: $showingAddMember) {
-            AddMemberView(viewModel: viewModel, groupId: groupId)
-                .presentationDetents([.height(280)])
-                .presentationDragIndicator(.visible)
         }
     }
 
