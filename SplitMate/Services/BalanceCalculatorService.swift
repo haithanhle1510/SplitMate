@@ -1,129 +1,104 @@
 import Foundation
 
-class BalanceCalculatorService {
-    // MARK: - Direct Debts (Original - No Simplification)
-    
-    /// Calculate direct debts from expenses (before any simplification)
-    static func calculateDirectDebts(_ group: SplitGroup) -> [Debt] {
-        var directDebts: [Debt] = []
-        
-        // For each pair of members
-        for debtor in group.members {
-            for creditor in group.members {
-                if debtor.id == creditor.id { continue }
-                
-                // Find all expenses where creditor paid and debtor participated
-                var totalShare: Double = 0
-                var contributingExpenseIds: [UUID] = []
-                
-                for expense in group.expenses {
-                    if expense.paidBy == creditor.id && 
-                       expense.participantIds.contains(debtor.id) {
-                        totalShare += expense.perPersonShare
-                        contributingExpenseIds.append(expense.id)
-                    }
-                }
-                
-                // Only create debt if there's an amount owed
-                if totalShare > 0.01 {
-                    directDebts.append(Debt(
-                        debtor: debtor,
-                        creditor: creditor,
-                        amount: totalShare,
-                        expenseIds: contributingExpenseIds
-                    ))
-                }
-            }
-        }
-        
-        return directDebts.sorted { $0.amount > $1.amount }
-    }
-    
-    // MARK: - Simplified Debts (Greedy Algorithm)
-    
-    /// Calculate simplified debts using greedy algorithm (recommended for display)
-    static func calculateSimplifiedDebts(_ group: SplitGroup) -> [Debt] {
-        // 1. Calculate member balances
-        let memberBalances = calculateMemberBalances(group)
-        
-        // 2. Separate creditors (owed money) and debtors (owe money)
-        let creditors = memberBalances.filter { $0.balance > 0.01 }  // Use small tolerance for floating point
-        var debtors = memberBalances.filter { $0.balance < -0.01 }
-        
-        // 3. Greedy matching - pair creditors with debtors
-        var debts: [Debt] = []
-        
-        for creditorIdx in 0..<creditors.count {
-            var creditorRemaining = creditors[creditorIdx].balance
-            
-            for debtorIdx in 0..<debtors.count {
-                if creditorRemaining < 0.01 { break }
-                
-                let debtorOwing = abs(debtors[debtorIdx].balance)
-                if debtorOwing < 0.01 { continue }
-                
-                let settlement = min(creditorRemaining, debtorOwing)
-                
-                debts.append(Debt(
-                    debtor: debtors[debtorIdx].member,
-                    creditor: creditors[creditorIdx].member,
-                    amount: settlement,
-                    expenseIds: []  // Simplified debts don't track specific expenses
-                ))
-                
-                creditorRemaining -= settlement
-                debtors[debtorIdx].balance += settlement  // Make it less negative
-            }
-        }
-        
-        return debts
-    }
-    
-    // MARK: - Backward Compatibility
-    
-    /// Legacy method - calls simplified debts for backward compatibility
-    static func calculateGroupDebts(_ group: SplitGroup) -> [Debt] {
-        return calculateSimplifiedDebts(group)
-    }
-    
-    // MARK: - Helper Methods
-    
-    /// Get expenses for a debt (for displaying in dropdown)
-    static func getExpensesForDebt(_ debt: Debt, group: SplitGroup) -> [Expense] {
-        return group.expenses.filter { debt.expenseIds.contains($0.id) }
-    }
-    
-    // Calculate balance for each member in a group
-    static func calculateMemberBalances(_ group: SplitGroup) -> [MemberBalance] {
-        var memberBalances: [UUID: Double] = [:]
-        
-        // Initialize all members with 0 balance
-        group.members.forEach { memberBalances[$0.id] = 0 }
-        
-        // Process each expense
-        for expense in group.expenses {
-            let share = expense.perPersonShare
-            let payer = expense.paidBy
-            
-            // Payer gets credit for paying
-            memberBalances[payer, default: 0] += expense.amount
-            
-            // Deduct share from each participant
-            for participant in expense.participantIds {
-                memberBalances[participant, default: 0] -= share
-            }
-        }
-        
-        // Convert to MemberBalance objects
-        return group.members.map { member in
-            let balance = memberBalances[member.id] ?? 0
-            return MemberBalance(
-                id: member.id,
-                member: member,
-                balance: balance,
-                debts: []  // Debts calculated separately per member if needed
-            )
-        }.sorted { $0.balance > $1.balance }  // Sort: creditors first
-    }
+private let balanceMoneyEpsilon = 0.02
+
+// MARK: - Derived balance types (not persisted)
+
+/// One pair-net row for Home / breakdown navigation.
+struct Debt: Identifiable {
+    let id: UUID = UUID()
+    let debtor: Member
+    let creditor: Member
+    var amount: Double
+    var expenseIds: [UUID] = []
 }
 
+/// Single contribution to a pair-net debt — one expense, signed from the debtor's perspective.
+struct PairContribution: Identifiable {
+    var id: UUID { expense.id }
+    let expense: Expense
+    let amount: Double
+}
+
+enum BalanceCalculatorService {
+
+    /// Signed remainder for `memberId` toward the expense payer (`0` when member is payer).
+    private static func signedRemainder(expense: Expense, memberId: UUID) -> Double {
+        expense.signedBalanceTowardPayer(memberId: memberId)
+    }
+
+    /// Per-pair NET debts. One row per unordered pair {A,B}, signed so debtor → creditor.
+    static func calculatePairwiseNetDebts(_ group: SplitGroup) -> [Debt] {
+        var result: [Debt] = []
+        let members = group.members
+
+        for i in 0..<members.count {
+            for j in (i + 1)..<members.count {
+                let a = members[i]
+                let b = members[j]
+
+                var aOwesB: Double = 0
+                var bOwesA: Double = 0
+                var expenseIdSet = Set<UUID>()
+
+                for expense in group.expenses {
+                    let rA = signedRemainder(expense: expense, memberId: a.id)
+                    let rB = signedRemainder(expense: expense, memberId: b.id)
+
+                    if expense.paidByMemberId == b.id,
+                       expense.participantRow(for: a.id) != nil {
+                        if rA > balanceMoneyEpsilon {
+                            aOwesB += rA
+                            expenseIdSet.insert(expense.id)
+                        } else if rA < -balanceMoneyEpsilon {
+                            bOwesA += -rA
+                            expenseIdSet.insert(expense.id)
+                        }
+                    }
+                    if expense.paidByMemberId == a.id,
+                       expense.participantRow(for: b.id) != nil {
+                        if rB > balanceMoneyEpsilon {
+                            bOwesA += rB
+                            expenseIdSet.insert(expense.id)
+                        } else if rB < -balanceMoneyEpsilon {
+                            aOwesB += -rB
+                            expenseIdSet.insert(expense.id)
+                        }
+                    }
+                }
+
+                let net = aOwesB - bOwesA
+                if abs(net) < balanceMoneyEpsilon { continue }
+
+                let sortedIds = expenseIdSet.sorted { $0.uuidString < $1.uuidString }
+                if net > 0 {
+                    result.append(Debt(debtor: a, creditor: b, amount: net, expenseIds: sortedIds))
+                } else {
+                    result.append(Debt(debtor: b, creditor: a, amount: -net, expenseIds: sortedIds))
+                }
+            }
+        }
+
+        return result.sorted { $0.amount > $1.amount }
+    }
+
+    static func pairContributions(group: SplitGroup, debtor: Member, creditor: Member) -> [PairContribution] {
+        var results: [PairContribution] = []
+        for expense in group.expenses {
+            let rD = signedRemainder(expense: expense, memberId: debtor.id)
+            let rC = signedRemainder(expense: expense, memberId: creditor.id)
+
+            if expense.paidByMemberId == creditor.id,
+               expense.participantRow(for: debtor.id) != nil,
+               abs(rD) > balanceMoneyEpsilon {
+                results.append(PairContribution(expense: expense, amount: rD))
+            }
+            if expense.paidByMemberId == debtor.id,
+               expense.participantRow(for: creditor.id) != nil,
+               abs(rC) > balanceMoneyEpsilon {
+                results.append(PairContribution(expense: expense, amount: -rC))
+            }
+        }
+        return results.sorted { $0.expense.date > $1.expense.date }
+    }
+}

@@ -3,6 +3,7 @@ import SwiftUI
 struct GroupsView: View {
     @StateObject private var viewModel = GroupViewModel()
     @State private var showingAddGroup = false
+    @State private var newGroupId: UUID? = nil
 
     var body: some View {
         NavigationStack {
@@ -56,10 +57,13 @@ struct GroupsView: View {
             }
             .toolbarBackground(Color.appBg, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
+            .navigationDestination(item: $newGroupId) { id in
+                GroupDetailView(viewModel: viewModel, groupId: id)
+            }
             .sheet(isPresented: $showingAddGroup) {
-                CreateGroupView(viewModel: viewModel)
-                    .presentationDetents([.height(280)])
-                    .presentationDragIndicator(.visible)
+                CreateGroupView(viewModel: viewModel) { id in
+                    newGroupId = id
+                }
             }
         }
     }
