@@ -2,7 +2,8 @@ import Foundation
 
 class GroupStorageService {
     static let shared = GroupStorageService()
-    private let filename = "groups.json"
+    /// Bumped after payment-ledger schema change (`Expense.payments`, no `isSettled`).
+    private let filename = "splitmate_groups_v2.json"
 
     private init() {}
 

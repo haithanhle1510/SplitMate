@@ -12,237 +12,182 @@ struct GroupHomeTab: View {
     var body: some View {
         ZStack {
             Color.appBg.ignoresSafeArea()
-
             if let group {
-                if group.members.isEmpty {
-                    EmptyStateView(
-                        emoji: "👥",
-                        title: "Add some friends first.",
-                        message: "Head to Settings to invite people to this group.",
-                        ctaLabel: "Go to Settings",
-                        onCtaTap: { selectedTab = 2 }
-                    )
-                } else if group.expenses.isEmpty {
-                    VStack(spacing: 0) {
-                        memberAvatarsRow(group: group)
-                        EmptyStateView(
-                            emoji: "🧾",
-                            title: "Nothing to split yet.",
-                            message: "Add your first expense from the Expenses tab.",
-                            ctaLabel: "Go to Expenses",
-                            onCtaTap: { selectedTab = 1 }
-                        )
-                    }
-                } else {
-                    VStack(spacing: 0) {
-                        memberAvatarsRow(group: group)
-                        BalanceSummaryView(viewModel: viewModel, groupId: groupId)
-                    }
-                }
+                content(group: group)
             }
         }
     }
 
-    private func memberAvatarsRow(group: SplitGroup) -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                ForEach(group.members) { member in
-                    VStack(spacing: 4) {
-                        AvatarView(name: member.name, size: 40)
-                        Text(member.name)
-                            .font(.nunito(11, weight: .bold))
-                            .foregroundColor(.appMuted)
-                            .lineLimit(1)
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-        }
-        .background(Color.appBg)
-        .overlay(Rectangle().fill(Color.appBorder).frame(height: 1), alignment: .bottom)
-    }
+    // MARK: - Content router
 
-    private var summaryPlaceholder: some View {
-        let directDebts = group.map { viewModel.groupDirectDebts(groupId: $0.id) } ?? []
-        let simplifiedDebts = group.map { viewModel.groupSimplifiedDebts(groupId: $0.id) } ?? []
-        
-        return ScrollView {
-            VStack(spacing: 16) {
-                whoOwesWhoSection(directDebts: directDebts, group: group!)
-                if !simplifiedDebts.isEmpty && directDebts.count > simplifiedDebts.count {
-                    simplificationTipsSection(directDebts: directDebts, simplifiedDebts: simplifiedDebts)
-                }
-                Spacer().frame(height: 8)
-            }
-            .padding(.vertical, 12)
-        }
-    }
-
-    private func whoOwesWhoSection(directDebts: [Debt], group: SplitGroup) -> some View {
-        let personSummaries = viewModel.personDebtSummaries(groupId: group.id)
-        
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Who owes who")
-                    .font(.nunito(15, weight: .heavy))
-                    .foregroundColor(.appText)
-                Spacer()
-            }
-
-            if directDebts.isEmpty {
-                VStack(spacing: 8) {
-                    Text("All settled!")
-                        .font(.nunito(13, weight: .semibold))
-                        .foregroundColor(.appTerra)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(20)
-                .background(Color.appSageLt)
-                .cornerRadius(12)
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(Array(personSummaries.enumerated()), id: \.element.person.id) { personIdx, summary in
-                        // Level 1: Person aggregate (total owed)
-                        DisclosureGroup {
-                            VStack(spacing: 0) {
-                                ForEach(Array(summary.allRelationships.enumerated()), id: \.element.debt.id) { relIdx, relationship in
-                                    let debt = relationship.debt
-                                    let isOutgoing = relationship.isOutgoing
-                                    
-                                    // Level 2: Individual relationship (owes or gets paid)
-                                    DisclosureGroup {
-                                        VStack(spacing: 0) {
-                                            if !debt.expenseIds.isEmpty {
-                                                let expenses = viewModel.getExpensesForDebt(debt, groupId: group.id)
-                                                ForEach(expenses) { expense in
-                                                    // Level 3: Individual transactions
-                                                    let paidByMember = group.members.first { $0.id == expense.paidBy }
-                                                    ExpenseMiniRow(expense: expense, paidByName: paidByMember?.name)
-                                                }
-                                            }
-                                        }
-                                    } label: {
-                                        HStack {
-                                            if isOutgoing {
-                                                Text("\(summary.person.name) owes \(debt.creditor.name)")
-                                                    .font(.nunito(13, weight: .bold))
-                                                    .foregroundColor(.appText)
-                                            } else {
-                                                Text("\(debt.debtor.name) owes \(summary.person.name)")
-                                                    .font(.nunito(13, weight: .bold))
-                                                    .foregroundColor(.appMuted)
-                                            }
-                                            Spacer()
-                                            Text(String(format: "$%.2f", debt.amount))
-                                                .font(.nunito(13, weight: .bold))
-                                                .foregroundColor(isOutgoing ? .appTerra : .appSage)
-                                        }
-                                    }
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 10)
-
-                                    if relIdx < summary.allRelationships.count - 1 {
-                                        Divider()
-                                            .background(Color.appBorder)
-                                            .padding(.horizontal, 16)
-                                    }
-                                }
-                            }
-                        } label: {
-                            HStack {
-                                Text(summary.displayText)
-                                    .font(.nunito(14, weight: .bold))
-                                    .foregroundColor(.appText)
-                                Spacer()
-                                Text(String(format: "$%.2f", summary.displayAmount))
-                                    .font(.nunito(14, weight: .bold))
-                                    .foregroundColor(summary.displayColor)
-                            }
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-
-                        if personIdx < personSummaries.count - 1 {
-                            Divider()
-                                .background(Color.appBorder)
-                                .padding(.horizontal, 12)
-                        }
-                    }
-                }
-                .background(Color.appWhite)
-                .cornerRadius(12)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12).stroke(Color.appBorder, lineWidth: 1)
+    @ViewBuilder
+    private func content(group: SplitGroup) -> some View {
+        if group.members.isEmpty {
+            EmptyStateView(
+                emoji: "👥",
+                title: "Add some friends first.",
+                message: "Head to Settings to invite people to this group.",
+                ctaLabel: "Go to Settings",
+                onCtaTap: { selectedTab = 2 }
+            )
+        } else if group.expenses.isEmpty {
+            VStack(alignment: .leading, spacing: 24) {
+                memberCluster(group: group)
+                    .padding(.top, 16)
+                EmptyStateView(
+                    emoji: "🧾",
+                    title: "Nothing to split yet.",
+                    message: "Add your first expense from the Expenses tab.",
+                    ctaLabel: "Go to Expenses",
+                    onCtaTap: { selectedTab = 1 }
                 )
             }
+        } else {
+            overview(group: group)
         }
-        .padding(14)
+    }
+
+    // MARK: - Overview
+
+    private func overview(group: SplitGroup) -> some View {
+        let totalSpent = viewModel.totalSpent(groupId: groupId)
+        let pairs = viewModel.pairwiseNetDebts(groupId: groupId)
+
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 28) {
+                memberCluster(group: group)
+                totalSpentCard(totalSpent: totalSpent, expenseCount: group.expenses.count)
+                pairsSection(pairs: pairs)
+                Spacer().frame(height: 24)
+            }
+            .padding(.top, 16)
+        }
+    }
+
+    // MARK: - Members strip
+
+    private func memberCluster(group: SplitGroup) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(group.members) { member in
+                        AvatarView(name: member.name, size: 36)
+                            .accessibilityLabel(member.name)
+                    }
+                }
+                .padding(.trailing, 4)
+            }
+            Text("\(group.members.count) \(group.members.count == 1 ? "member" : "members")")
+                .font(.nunito(11, weight: .semibold))
+                .tracking(0.4)
+                .foregroundColor(.appMuted)
+        }
+        .padding(.horizontal, 20)
+    }
+
+    // MARK: - Total spent card
+
+    private func totalSpentCard(totalSpent: Double, expenseCount: Int) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Total spent")
+                .font(.nunito(11, weight: .heavy))
+                .tracking(0.6)
+                .foregroundColor(.appMuted)
+            Text(CurrencyFormatter.format(totalSpent))
+                .font(.nunito(50, weight: .black))
+                .foregroundColor(.appText)
+                .tracking(-0.8)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+            Text("across \(expenseCount) \(expenseCount == 1 ? "expense" : "expenses")")
+                .font(.nunito(13, weight: .semibold))
+                .foregroundColor(.appMuted)
+        }
+        .padding(.horizontal, 20)
+    }
+
+    // MARK: - Pairs section ("who pays who")
+
+    @ViewBuilder
+    private func pairsSection(pairs: [Debt]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Outstanding Balance")
+                .font(.nunito(11, weight: .heavy))
+                .tracking(0.6)
+                .foregroundColor(.appMuted)
+                .padding(.horizontal, 20)
+
+            if pairs.isEmpty {
+                Text("No outstanding balance")
+                    .font(.nunito(15, weight: .heavy))
+                    .foregroundColor(.appText)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 18)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.appWhite)
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18).stroke(Color.appBorder, lineWidth: 1)
+                    )
+                    .padding(.horizontal, 14)
+            } else {
+                pairList(pairs: pairs)
+            }
+        }
+    }
+
+    private func pairList(pairs: [Debt]) -> some View {
+        VStack(spacing: 0) {
+            ForEach(Array(pairs.enumerated()), id: \.element.id) { idx, debt in
+                NavigationLink {
+                    PairBreakdownView(viewModel: viewModel, groupId: groupId, debt: debt)
+                } label: {
+                    pairRow(debt: debt)
+                }
+                .buttonStyle(.plain)
+
+                if idx < pairs.count - 1 {
+                    Rectangle()
+                        .fill(Color.appBorder)
+                        .frame(height: 1)
+                        .padding(.leading, 20)
+                }
+            }
+        }
         .background(Color.appWhite)
-        .cornerRadius(16)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
         .overlay(
-            RoundedRectangle(cornerRadius: 16).stroke(Color.appBorder, lineWidth: 1)
+            RoundedRectangle(cornerRadius: 18).stroke(Color.appBorder, lineWidth: 1)
         )
         .padding(.horizontal, 14)
     }
 
-    private func simplificationTipsSection(directDebts: [Debt], simplifiedDebts: [Debt]) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("💡 Simplification Tips")
-                    .font(.nunito(15, weight: .heavy))
-                    .foregroundColor(.appText)
-                Spacer()
-                Text("\(simplifiedDebts.count) payments")
-                    .font(.nunito(11, weight: .semibold))
-                    .foregroundColor(.appSage)
-            }
+    private func pairRow(debt: Debt) -> some View {
+        HStack(spacing: 10) {
+            AvatarView(name: debt.debtor.name, size: 32)
+            Text(debt.debtor.name)
+                .font(.nunito(15, weight: .heavy))
+                .foregroundColor(.appText)
+            Text("pays")
+                .font(.nunito(12, weight: .semibold))
+                .foregroundColor(.appMuted)
+            Text(debt.creditor.name)
+                .font(.nunito(15, weight: .heavy))
+                .foregroundColor(.appText)
 
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Instead of \(directDebts.count) transactions, simplify to:")
-                    .font(.nunito(12, weight: .semibold))
-                    .foregroundColor(.appMuted)
+            Spacer()
 
-                VStack(spacing: 0) {
-                    ForEach(Array(simplifiedDebts.enumerated()), id: \.element.id) { idx, debt in
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("\(debt.debtor.name) pays \(debt.creditor.name)")
-                                    .font(.nunito(13, weight: .bold))
-                                    .foregroundColor(.appText)
-                            }
-                            Spacer()
-                            Text(String(format: "$%.2f", debt.amount))
-                                .font(.nunito(13, weight: .bold))
-                                .foregroundColor(.appSage)
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-
-                        if idx < simplifiedDebts.count - 1 {
-                            Divider()
-                                .background(Color.appBorder)
-                                .padding(.horizontal, 12)
-                        }
-                    }
-                }
-                .background(Color.appSageLt)
-                .cornerRadius(8)
-
-                let savings = directDebts.count - simplifiedDebts.count
-                let percentage = Int((Double(savings) / Double(directDebts.count)) * 100)
-
-                Text("💰 Save \(savings) transaction\(savings > 1 ? "s" : "") (\(percentage)% fewer)")
-                    .font(.nunito(12, weight: .semibold))
-                    .foregroundColor(.appSage)
-            }
+            Text(CurrencyFormatter.format(debt.amount))
+                .font(.nunito(15, weight: .black))
+                .foregroundColor(.appTerra)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.appMuted)
         }
-        .padding(14)
-        .background(Color.appWhite)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16).stroke(Color.appBorder, lineWidth: 1)
-        )
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(debt.debtor.name) pays \(debt.creditor.name) \(CurrencyFormatter.format(debt.amount))")
     }
 }

@@ -3,7 +3,7 @@ import SwiftUI
 struct ExpenseMiniRow: View {
     let expense: Expense
     let paidByName: String?
-    
+
     var body: some View {
         HStack(spacing: 10) {
             ZStack {
@@ -29,7 +29,7 @@ struct ExpenseMiniRow: View {
                 }
             }
             Spacer()
-            Text(String(format: "$%.2f", expense.perPersonShare))
+            Text(String(format: "$%.2f", expense.totalAmount))
                 .font(.nunito(13, weight: .bold))
                 .foregroundColor(.appTerra)
         }
@@ -39,16 +39,23 @@ struct ExpenseMiniRow: View {
 }
 
 #Preview {
+    let idA = UUID()
+    let idB = UUID()
     let sample = Expense(
         id: UUID(),
         title: "Dinner",
-        amount: 120,
-        paidBy: UUID(),
-        participantIds: [UUID(), UUID(), UUID()],
+        totalAmount: 120,
+        paidByMemberId: idA,
+        splitType: .equal,
+        participants: [
+            ExpenseParticipant(memberId: idA, percentage: nil, owedAmount: 60),
+            ExpenseParticipant(memberId: idB, percentage: nil, owedAmount: 60)
+        ],
+        payments: [],
         category: .food,
         date: Date(),
         note: nil,
-        settledMemberIds: []
+        createdAt: Date()
     )
     return ExpenseMiniRow(expense: sample, paidByName: "Alex")
 }

@@ -108,55 +108,39 @@ struct GroupSettingsTab: View {
     }
 
     private func membersSection(group: SplitGroup) -> some View {
-        let balances = viewModel.memberBalances(groupId: groupId)
-        
-        return sectionCard {
+        sectionCard {
             sectionHeader("Members")
             VStack(spacing: 0) {
-                ForEach(Array(balances.enumerated()), id: \.element.id) { idx, balance in
+                ForEach(Array(group.members.enumerated()), id: \.element.id) { idx, member in
                     HStack(spacing: 12) {
-                        AvatarView(name: balance.member.name, size: 36)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(balance.member.name)
-                                .font(.nunito(15, weight: .bold))
-                                .foregroundColor(.appText)
-                            
-                            // Balance status
-                            if balance.balance > 0.01 {
-                                Text(balance.member.name + " is owed " + String(format: "$%.2f", balance.balance))
-                                    .font(.nunito(12, weight: .semibold))
-                                    .foregroundColor(.appSage)
-                            } else if balance.balance < -0.01 {
-                                Text(balance.member.name + " owes " + String(format: "$%.2f", abs(balance.balance)))
-                                    .font(.nunito(12, weight: .semibold))
-                                    .foregroundColor(.appMuted)
-                            } else {
-                                Text("Settled")
-                                    .font(.nunito(12, weight: .semibold))
-                                    .foregroundColor(.appTerra)
-                            }
-                        }
-                        
+                        AvatarView(name: member.name, size: 36)
+
+                        Text(member.name)
+                            .font(.nunito(15, weight: .bold))
+                            .foregroundColor(.appText)
+
                         Spacer()
-                        
-                        // Remove button (only show for members with no references in expenses)
-                        if !group.expenses.contains(where: { $0.paidBy == balance.member.id || $0.participantIds.contains(balance.member.id) }) {
+
+                        if !group.expenses.contains(where: {
+                            $0.paidByMemberId == member.id
+                                || $0.participants.contains(where: { $0.memberId == member.id })
+                        }) {
                             Button {
                                 Haptics.warning()
-                                memberToRemove = balance.member
+                                memberToRemove = member
                             } label: {
                                 Image(systemName: "xmark")
                                     .font(.system(size: 12, weight: .semibold))
                                     .foregroundColor(.appMuted)
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel("Remove \(member.name)")
                         }
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
-                    
-                    if idx < balances.count - 1 {
+
+                    if idx < group.members.count - 1 {
                         divider
                     }
                 }
@@ -192,19 +176,24 @@ struct GroupSettingsTab: View {
     }
 
     private var deleteSection: some View {
-        sectionCard {
-            Button {
-                Haptics.warning()
-                showingDeleteConfirm = true
-            } label: {
-                Text("Delete group")
-                    .font(.nunito(15, weight: .bold))
-                    .foregroundColor(.appWarmGray)
-                    .frame(maxWidth: .infinity)
-                    .padding(14)
+        Button {
+            Haptics.warning()
+            showingDeleteConfirm = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "trash")
+                    .font(.system(size: 14, weight: .bold))
+                Text("Delete Group")
+                    .font(.nunito(15, weight: .heavy))
             }
-            .buttonStyle(.plain)
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 15)
+            .background(Color.appTerra)
+            .cornerRadius(16)
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Delete group")
     }
 
     private func attemptRemove(memberId: UUID) {

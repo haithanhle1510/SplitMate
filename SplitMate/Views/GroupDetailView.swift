@@ -6,6 +6,8 @@ struct GroupDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTab: Int = 0
     @State private var showingAddExpense = false
+    @State private var showingFilterSheet = false
+    @State private var expenseFilter: ExpenseFilter = .empty
 
     private var group: SplitGroup? {
         viewModel.groups.first { $0.id == groupId }
@@ -14,14 +16,19 @@ struct GroupDetailView: View {
     var body: some View {
         if let group = group {
             TabView(selection: $selectedTab) {
-                GroupHomeTab(viewModel: viewModel, groupId: groupId, selectedTab: $selectedTab)
-                    .tabItem { Label("Home", systemImage: "house.fill") }
-                    .tag(0)
+                GroupHomeTab(
+                    viewModel: viewModel,
+                    groupId: groupId,
+                    selectedTab: $selectedTab
+                )
+                .tabItem { Label("Home", systemImage: "house.fill") }
+                .tag(0)
 
                 GroupExpensesTab(
                     viewModel: viewModel,
                     groupId: groupId,
-                    showingAddExpense: $showingAddExpense
+                    showingAddExpense: $showingAddExpense,
+                    filter: $expenseFilter
                 )
                 .tabItem { Label("Expenses", systemImage: "list.bullet.rectangle") }
                 .tag(1)
@@ -41,7 +48,25 @@ struct GroupDetailView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 if selectedTab == 1 {
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItemGroup(placement: .topBarTrailing) {
+                        Button {
+                            showingFilterSheet = true
+                        } label: {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 9)
+                                    .fill(expenseFilter.isActive ? Color.appTerra : Color.appWhite)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 9)
+                                            .stroke(expenseFilter.isActive ? Color.appTerra : Color.appBorder, lineWidth: 1)
+                                    )
+                                Image(systemName: "line.3.horizontal.decrease")
+                                    .font(.system(size: 12, weight: .heavy))
+                                    .foregroundColor(expenseFilter.isActive ? .white : .appText)
+                            }
+                            .frame(width: 30, height: 30)
+                        }
+                        .accessibilityLabel("Filter expenses")
+
                         Button {
                             showingAddExpense = true
                         } label: {
@@ -60,6 +85,11 @@ struct GroupDetailView: View {
             .sheet(isPresented: $showingAddExpense) {
                 AddExpenseView(viewModel: viewModel, groupId: groupId)
                     .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showingFilterSheet) {
+                ExpenseFilterSheet(filter: $expenseFilter, members: group.members)
+                    .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
             }
         } else {
