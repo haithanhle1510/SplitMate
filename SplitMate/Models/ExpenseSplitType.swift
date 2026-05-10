@@ -12,4 +12,12 @@ enum ExpenseSplitType: String, Codable, CaseIterable {
         case .exactAmount: return "Split by exact amounts"
         }
     }
+
+    var shortLabel: String {
+        switch self {
+        case .equal:       return "Equally"
+        case .percentage:  return "By %"
+        case .exactAmount: return "By Amount"
+        }
+    }
 }
