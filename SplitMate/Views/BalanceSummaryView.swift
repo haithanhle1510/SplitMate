@@ -245,10 +245,4 @@ struct BalanceSummaryView: View {
     }
 }
 
-private extension Date {
-    var shortFormatted: String {
-        let f = DateFormatter()
-        f.dateFormat = "MMM d"
-        return f.string(from: self)
-    }
-}
+
