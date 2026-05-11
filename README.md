@@ -1,5 +1,7 @@
 # SplitMate
 
+https://github.com/haithanhle1510/SplitMate
+
 ## Project overview
 
 SplitMate is an iOS shared expense app for small groups (students, trips, project teams). It records who paid, how the bill was split, and tracks **payments toward settlement** so balances stay accurate.
